@@ -10,6 +10,21 @@ Works on Linux servers with Docker. Caddy terminates TLS for your domain and saf
 
 ---
 
+## Server Requirements and Recommendation
+
+Even though this should be fine to run on an existing server as it is just a Docker stack, we strongly recommend renting a cheap cloud server from a provider like Hetzner or Azure and only running this setup there. Especially if using the install.sh script, as there will be edge cases where the script could break something on existing servers.
+
+**Server requirements:**
+- Lowest level VPS is enough for your use cases
+- The server software is not CPU and memory intensive
+- Our public ID server hosted on a 2 CPU/4 GB Vultr server serves 1.0+ million endpoints
+- Each relay connection consumes avg 180kb per second
+- 1 CPU core and 1GB RAM is enough to support 1000 relay concurrent connections
+
+For more detailed hardware requirements, see: https://rustdesk.com/docs/en/self-host/rustdesk-server-pro/#hardware-requirement
+
+---
+
 ## Quick start (automated install)
 
 Prereqs
@@ -51,6 +66,19 @@ sudo ./install.sh
 Verification
 - Check containers: `docker compose ps`
 - Visit: `https://your-domain` (Caddy auto‑obtains certificates; ensure ports 80/443 are reachable)
+
+---
+
+## Default login
+
+On first build, RustDesk creates a default user called admin:
+
+- **Username:** `admin`
+- **Password:** `test1234`
+
+**Important:** We recommend completely deleting this account after you have created a new administrator account for security.
+
+For more information about logging in and console management, see: https://rustdesk.com/docs/en/self-host/rustdesk-server-pro/console/#log-in
 
 ---
 
@@ -314,6 +342,12 @@ sudo userdel caddy || true
 - This setup assumes Linux; macOS/Windows won’t support `network_mode: host` the same way.
 - Keep your domain list in `.env` up to date. You can rerun the installer any time; it’s safe.
 - Use the included `.env.example` as a starting point and keep it around to document your defaults.
+
+---
+
+## Affiliation
+
+This repository is not affiliated with either RustDesk or Caddy in any way.
 
 ---
 
