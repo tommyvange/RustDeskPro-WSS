@@ -1,0 +1,60 @@
+{
+  admin off
+}
+
+EXAMPLE.COM {
+  encode zstd gzip
+
+  ### CORS - START ###
+
+  # --- CORS (only allow *.rustdesk.com) ---
+  @rustdesk_origin header_regexp Origin ^https?://(www\.)?rustdesk\.com$
+  header @rustdesk_origin Access-Control-Allow-Origin "{http.request.header.Origin}"
+  header @rustdesk_origin Access-Control-Allow-Methods "GET, POST, PUT, DELETE, PATCH, OPTIONS"
+  header @rustdesk_origin Access-Control-Allow-Headers "Origin, Content-Type, Accept, Authorization"
+  header @rustdesk_origin Access-Control-Allow-Credentials "true"
+
+  @preflight_rustdesk {
+    method OPTIONS
+    header_regexp Origin ^https?://(www\.)?rustdesk\.com$
+  }
+  header @preflight_rustdesk Content-Length "0"
+  header @preflight_rustdesk Content-Type "text/plain; charset=UTF-8"
+  respond @preflight_rustdesk 204
+
+  ### CORS - END ###
+
+  # --- Order matters: handle WS first, then the console ---
+  @ws_id path /ws/id*
+  reverse_proxy @ws_id 127.0.0.1:21118 {
+    # Force HTTP/1.1 to upstream for WebSocket upgrade
+    transport http {
+      versions 1.1
+      read_timeout 2m
+      write_timeout 2m
+    }
+    header_up Host {host}
+    header_up X-Forwarded-Proto {scheme}
+    header_up X-Forwarded-For {remote}
+  }
+
+  @ws_relay path /ws/relay*
+  reverse_proxy @ws_relay 127.0.0.1:21119 {
+    # Force HTTP/1.1 to upstream for WebSocket upgrade
+    transport http {
+      versions 1.1
+      read_timeout 2m
+      write_timeout 2m
+    }
+    header_up Host {host}
+    header_up X-Forwarded-Proto {scheme}
+    header_up X-Forwarded-For {remote}
+  }
+
+  # Console (hbbs 21114)
+  reverse_proxy 127.0.0.1:21114
+
+  header {
+    -Server
+  }
+}

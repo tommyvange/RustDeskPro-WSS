@@ -1,0 +1,61 @@
+services:
+  # ---------------------
+  # RustDesk Server Pro
+  # ---------------------
+  hbbr:
+    container_name: hbbr
+    user: "${RUSTDESK_UID}:${RUSTDESK_GID}"
+    image: rustdesk/rustdesk-server-pro:latest
+    command: hbbr
+    network_mode: "host"              # Must be "host" due to licence checks
+    volumes:
+      - ${FILE_LOCATION_RUSTDESK}/data:/root
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - NET_RAW
+
+  hbbs:
+    container_name: hbbs
+    user: "${RUSTDESK_UID}:${RUSTDESK_GID}"
+    image: rustdesk/rustdesk-server-pro:latest
+    command: hbbs
+    network_mode: "host"              # Must be "host" due to licence checks
+    volumes:
+      - ${FILE_LOCATION_RUSTDESK}/data:/root
+    depends_on:
+      - hbbr
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - NET_RAW
+
+  # ---------------------
+  # Caddy (reverse proxy)
+  # ---------------------
+  caddy:
+    container_name: caddy
+    user: "${CADDY_UID}:${CADDY_GID}"
+    image: caddy:latest
+    network_mode: "host"              # so it can reach 127.0.0.1:21114/18/19
+    restart: unless-stopped
+    environment:
+      - XDG_DATA_HOME=/data           # ACME certs/state
+      - XDG_CONFIG_HOME=/config
+    volumes:
+      - ${FILE_LOCATION_CADDY}/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ${FILE_LOCATION_CADDY}/data:/data
+      - ${FILE_LOCATION_CADDY}/config:/config
+    depends_on:
+      - hbbr
+      - hbbs
+    security_opt:
+      - no-new-privileges:true
+    cap_add:
+      - NET_BIND_SERVICE              # bind :80/:443/tcp and :443/udp
+    read_only: true                   # immutable root FS
+    tmpfs:
+      - /tmp
+      - /run
