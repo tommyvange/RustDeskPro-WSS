@@ -1,12 +1,29 @@
 # RustDeskPro-WSS
 
-A production-ready wrapper to run RustDesk Server Pro (hbbr/hbbs) behind Caddy with automatic HTTPS, Docker Compose, and a hardened firewall posture.
+A production-ready websocket-enabled wrapper to run RustDesk Server Pro (hbbr/hbbs) behind Caddy with automatic HTTPS, Docker Compose, and a hardened firewall posture.
+
+**This setup completely replaces the normal RustDesk direct connection model with websocket-based connections**, providing enhanced security and easier firewall management by routing all traffic through standard HTTPS/websocket protocols.
 
 This repo gives you two paths:
 - Automated install with `install.sh` (recommended)
 - Manual step-by-step setup (do it yourself, explained in detail)
 
-Works on Linux servers with Docker. Caddy terminates TLS for your domain and safely proxies only the required endpoints to hbbr/hbbs running on the host network.
+Works on Linux servers with Docker. Caddy terminates TLS for your domain and safely proxies websocket endpoints and console access to hbbr/hbbs running on the host network.
+
+---
+
+## Server Requirements and Recommendation
+
+Even though this should be fine to run on an existing server as it is just a Docker stack, we strongly recommend renting a cheap cloud server from a provider like Hetzner or Azure and only running this setup there. Especially if using the install.sh script, as there will be edge cases where the script could break something on existing servers.
+
+**Server requirements (based on RustDesk documentation):**
+- Lowest level VPS is sufficient for most use cases
+- RustDesk Server Pro is not CPU and memory intensive
+- According to RustDesk, their public ID server hosted on a 2 CPU/4 GB Vultr server serves 1.0+ million endpoints
+- Each websocket relay connection consumes avg 180kb per second
+- 1 CPU core and 1GB RAM is enough to support 1000 websocket relay concurrent connections
+
+For more detailed hardware requirements, see: https://rustdesk.com/docs/en/self-host/rustdesk-server-pro/#hardware-requirement
 
 ---
 
@@ -51,6 +68,19 @@ sudo ./install.sh
 Verification
 - Check containers: `docker compose ps`
 - Visit: `https://your-domain` (Caddy auto‑obtains certificates; ensure ports 80/443 are reachable)
+
+---
+
+## Default login
+
+On first build, RustDesk creates a default user called admin:
+
+- **Username:** `admin`
+- **Password:** `test1234`
+
+**Important:** I recommend completely deleting this account after you have created a new administrator account. 
+
+For more information about logging in and console management, see: https://rustdesk.com/docs/en/self-host/rustdesk-server-pro/console/#log-in
 
 ---
 
@@ -156,7 +186,7 @@ Tip: See the Firewall section below for the exact allow/deny rules to use with U
 
 - hbbr (RustDesk relay) and hbbs (RustDesk broker) run with `network_mode: host` by design (required by licensing and to expose the expected ports locally)
 - Data volume: `${FILE_LOCATION_RUSTDESK}/data` → container `/root` for both hbbr and hbbs (where RustDesk stores config/state)
-- Caddy also runs on the host network so it can proxy to `127.0.0.1:21114/18/19`
+- Caddy also runs on the host network so it can proxy websocket connections to `127.0.0.1:21114/18/19`
 - Caddy mounts:
   - `${FILE_LOCATION_CADDY}/Caddyfile:/etc/caddy/Caddyfile:ro`
   - `${FILE_LOCATION_CADDY}/data` (ACME certs/state)
@@ -220,9 +250,9 @@ Legend:
 
 **Traffic Flow Examples:**
 - User visits `https://example.com` → Caddy :443 → hbbs :21114 (web console)
-- WebSocket ID request → Caddy `/ws/id*` → hbbs :21118
-- WebSocket relay → Caddy `/ws/relay*` → hbbr :21119
-- NAT traversal (UDP) → hbbr :21116 (direct, not through Caddy)
+- WebSocket ID request → Caddy `/ws/id*` → hbbs :21118 (websocket connection)
+- WebSocket relay → Caddy `/ws/relay*` → hbbr :21119 (websocket connection)
+- NAT traversal (UDP) → hbbr :21116 (direct, not through Caddy websockets)
 
 TLS: Caddy obtains and renews certificates automatically via HTTPS-01/HTTP-01. Ensure:
 - `DOMAINS` point to this server (A/AAAA records)
@@ -242,7 +272,7 @@ Baseline rules
 sudo ufw allow 22/tcp
 
 # Public web: HTTPS and HTTP (for ACME http-01 and redirect)
-sudo ufw allow 443/tcp   # HTTPS and WebSockets via Caddy
+sudo ufw allow 443/tcp   # HTTPS and websockets via Caddy
 sudo ufw allow 443/udp   # HTTP/3 (QUIC) via Caddy (optional but recommended)
 sudo ufw allow 80/tcp    # ACME challenge + HTTP→HTTPS redirect
 
@@ -262,9 +292,9 @@ sudo ufw status numbered
 
 Why these ports?
 - 80/tcp: Caddy uses this for ACME HTTP-01 and to redirect to HTTPS
-- 443/tcp: TLS/HTTPS and WebSockets for RustDesk endpoints
+- 443/tcp: TLS/HTTPS and websockets for RustDesk endpoints
 - 443/udp: HTTP/3 (QUIC) for faster TLS on supporting clients
-- 21114/21118/21119 (tcp) and 21116 (udp): RustDesk services bound locally; should not be Internet-exposed when proxied by Caddy
+- 21114/21118/21119 (tcp) and 21116 (udp): RustDesk services bound locally; should not be Internet-exposed when proxied by Caddy websockets
 
 If you run a different firewall (nftables/iptables/cloud), translate the same intent: expose 80/443, keep RustDesk backend ports closed to the outside.
 
@@ -314,6 +344,12 @@ sudo userdel caddy || true
 - This setup assumes Linux; macOS/Windows won’t support `network_mode: host` the same way.
 - Keep your domain list in `.env` up to date. You can rerun the installer any time; it’s safe.
 - Use the included `.env.example` as a starting point and keep it around to document your defaults.
+
+---
+
+## Affiliation
+
+This repository is not affiliated with either RustDesk or Caddy in any way.
 
 ---
 
