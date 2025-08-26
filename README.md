@@ -14,10 +14,10 @@ Works on Linux servers with Docker. Caddy terminates TLS for your domain and saf
 
 Even though this should be fine to run on an existing server as it is just a Docker stack, we strongly recommend renting a cheap cloud server from a provider like Hetzner or Azure and only running this setup there. Especially if using the install.sh script, as there will be edge cases where the script could break something on existing servers.
 
-**Server requirements:**
-- Lowest level VPS is enough for your use cases
-- The server software is not CPU and memory intensive
-- Our public ID server hosted on a 2 CPU/4 GB Vultr server serves 1.0+ million endpoints
+**Server requirements (based on RustDesk documentation):**
+- Lowest level VPS is sufficient for most use cases
+- RustDesk Server Pro is not CPU and memory intensive
+- According to RustDesk, their public ID server hosted on a 2 CPU/4 GB Vultr server serves 1.0+ million endpoints
 - Each relay connection consumes avg 180kb per second
 - 1 CPU core and 1GB RAM is enough to support 1000 relay concurrent connections
 
