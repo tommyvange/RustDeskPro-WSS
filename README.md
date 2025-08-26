@@ -16,7 +16,7 @@ Prereqs
 - A Linux server with root/sudo
 - Docker Engine and Docker Compose Plugin installed
 - A DNS A/AAAA record pointing your domain to this server’s public IP
-- UFW or another firewall configured to allow HTTP-traffic
+- UFW or another firewall configured to match the [firewall section](#firewall-ufw-guide).
 
 Steps
 1) Clone the repository
@@ -31,7 +31,7 @@ cp .env.example .env
 ${EDITOR:-nano} .env
 ```
 Required:
-- DOMAINS: Comma-separated list (e.g., example.com,www.example.com). The installer converts this to a space-separated list for Caddy.
+- DOMAINS: Comma-separated list (e.g., rd.example.com,servername.westeurope.cloudapp.azure.com). The installer converts this to a space-separated list for Caddy.
 - FILE_LOCATION_CADDY: Where Caddy keeps config/state (default in example: /srv/caddy).
 - FILE_LOCATION_RUSTDESK: Where RustDesk Pro stores data (default in example: /srv/rustdesk).
 Optional:
@@ -50,7 +50,6 @@ sudo ./install.sh
 
 Verification
 - Check containers: `docker compose ps`
-- Tail logs: `docker compose logs -f --tail=200`
 - Visit: `https://your-domain` (Caddy auto‑obtains certificates; ensure ports 80/443 are reachable)
 
 ---
