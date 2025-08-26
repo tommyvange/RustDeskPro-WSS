@@ -76,7 +76,7 @@ On first build, RustDesk creates a default user called admin:
 - **Username:** `admin`
 - **Password:** `test1234`
 
-**Important:** We recommend completely deleting this account after you have created a new administrator account for security.
+**Important:** I recommend completely deleting this account after you have created a new administrator account. 
 
 For more information about logging in and console management, see: https://rustdesk.com/docs/en/self-host/rustdesk-server-pro/console/#log-in
 
