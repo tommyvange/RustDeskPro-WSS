@@ -89,6 +89,11 @@ load_env() {
         RUSTDESK_CORS="true"
     fi
     
+    if [[ -z "$RUSTDESK_NOINDEX" ]]; then
+        print_warning "RUSTDESK_NOINDEX variable not set in .env file, defaulting to 'true'"
+        RUSTDESK_NOINDEX="true"
+    fi
+    
     # Note: UID/GID variables will be set by create_users function
     
     print_success "Environment variables loaded successfully"
@@ -186,6 +191,15 @@ process_caddyfile() {
         print_status "Keeping CORS section (RUSTDESK_CORS=true)"
     fi
     
+    # Handle ROBOTS section
+    if [[ "$RUSTDESK_NOINDEX" == "false" ]]; then
+        print_status "Removing ROBOTS section (RUSTDESK_NOINDEX=false)..."
+        # Remove everything between and including ROBOTS markers
+        sed -i '/### ROBOTS - START ###/,/### ROBOTS - END ###/d' "$temp_caddyfile"
+    else
+        print_status "Keeping ROBOTS section (RUSTDESK_NOINDEX=true)"
+    fi
+    
     # Copy processed Caddyfile to destination
     cp "$temp_caddyfile" "$FILE_LOCATION_CADDY/Caddyfile"
     chown caddy:caddy "$FILE_LOCATION_CADDY/Caddyfile"
@@ -250,6 +264,7 @@ main() {
     print_status "Your RustDesk server is now running with the following configuration:"
     print_status "- Domains: $DOMAINS"
     print_status "- CORS enabled: $RUSTDESK_CORS"
+    print_status "- Robots noindex enabled: $RUSTDESK_NOINDEX"
     print_status "- Data location: $FILE_LOCATION_RUSTDESK"
     print_status "- Caddy config location: $FILE_LOCATION_CADDY"
     echo
