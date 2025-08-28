@@ -24,6 +24,13 @@ EXAMPLE.COM {
 
   ### CORS - END ###
 
+  ### ROBOTS - START ###
+
+  # --- Search Engine Blocking (noindex header) ---
+  header * X-Robots-Tag "noindex"
+
+  ### ROBOTS - END ###
+
   # --- Order matters: handle WS first, then the console ---
   @ws_id path /ws/id*
   reverse_proxy @ws_id 127.0.0.1:21118 {
