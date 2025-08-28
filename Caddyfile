@@ -31,7 +31,15 @@ EXAMPLE.COM {
 
   ### ROBOTS - END ###
 
-  # --- Order matters: handle WS first, then the console ---
+  ### SERVER_DETAILS - START ###
+
+  # --- Hide server details (remove via and server headers) ---
+  header {
+    -Server
+    -Via
+  }
+
+  ### SERVER_DETAILS - END ###
   @ws_id path /ws/id*
   reverse_proxy @ws_id 127.0.0.1:21118 {
     # Force HTTP/1.1 to upstream for WebSocket upgrade
@@ -60,8 +68,4 @@ EXAMPLE.COM {
 
   # Console (hbbs 21114)
   reverse_proxy 127.0.0.1:21114
-
-  header {
-    -Server
-  }
 }
