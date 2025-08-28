@@ -36,6 +36,50 @@ check_root() {
     print_success "Running as root"
 }
 
+# Function to configure UDP buffer sizes for optimal QUIC performance
+configure_udp_buffers() {
+    print_status "Configuring UDP buffer sizes for optimal HTTP/3 (QUIC) performance..."
+    
+    # Check current values
+    current_rmem_max=$(sysctl -n net.core.rmem_max 2>/dev/null || echo "0")
+    current_wmem_max=$(sysctl -n net.core.wmem_max 2>/dev/null || echo "0")
+    
+    # Recommended values for QUIC (in bytes)
+    # 7168 KiB = 7340032 bytes (as requested by QUIC in the error)
+    # Set to 8MB (8388608) to have some headroom
+    target_rmem_max=8388608
+    target_wmem_max=8388608
+    target_rmem_default=1048576
+    target_wmem_default=1048576
+    
+    print_status "Current UDP receive buffer max: $(($current_rmem_max / 1024)) KiB"
+    print_status "Current UDP send buffer max: $(($current_wmem_max / 1024)) KiB"
+    print_status "Setting UDP buffers to: $(($target_rmem_max / 1024)) KiB"
+    
+    # Configure sysctl values
+    sysctl -w net.core.rmem_max=$target_rmem_max
+    sysctl -w net.core.rmem_default=$target_rmem_default
+    sysctl -w net.core.wmem_max=$target_wmem_max
+    sysctl -w net.core.wmem_default=$target_wmem_default
+    
+    # Make changes persistent across reboots
+    print_status "Making UDP buffer settings persistent..."
+    
+    # Create or update sysctl configuration file
+    cat > /etc/sysctl.d/99-rustdesk-quic.conf << EOF
+# UDP buffer sizes for optimal QUIC performance (HTTP/3)
+# Required for Caddy/RustDesk to avoid UDP buffer warnings
+net.core.rmem_max = $target_rmem_max
+net.core.rmem_default = $target_rmem_default
+net.core.wmem_max = $target_wmem_max
+net.core.wmem_default = $target_wmem_default
+EOF
+    
+    print_success "UDP buffer sizes configured successfully"
+    print_status "New UDP receive buffer max: $(($target_rmem_max / 1024)) KiB"
+    print_status "Changes are persistent and will survive reboots"
+}
+
 # Function to check if Docker is installed
 check_docker() {
     print_status "Checking Docker installation..."
@@ -245,6 +289,7 @@ main() {
     
     check_root
     check_docker
+    configure_udp_buffers
     load_env
     create_users
     

@@ -342,6 +342,36 @@ sudo userdel caddy || true
   - That’s intentional; access via your domain through Caddy only
 - Docker/Compose not found
   - Install Docker Engine + Compose Plugin from the official docs
+- UDP buffer size warning in Caddy logs
+  - Message: "failed to sufficiently increase receive buffer size"
+  - This affects HTTP/3 (QUIC) performance but doesn't break functionality
+  - The install script automatically configures optimal UDP buffer sizes
+  - For manual setup, see the "UDP Buffer Configuration" section below
+
+### UDP Buffer Configuration
+
+The install script automatically configures system UDP buffer sizes to eliminate QUIC performance warnings. For manual configuration or troubleshooting:
+
+```bash
+# Check current settings
+sysctl net.core.rmem_max net.core.wmem_max
+
+# Apply optimal settings for QUIC
+sudo sysctl -w net.core.rmem_max=8388608
+sudo sysctl -w net.core.rmem_default=1048576
+sudo sysctl -w net.core.wmem_max=8388608
+sudo sysctl -w net.core.wmem_default=1048576
+
+# Make persistent (survives reboots)
+sudo tee /etc/sysctl.d/99-rustdesk-quic.conf << EOF
+net.core.rmem_max = 8388608
+net.core.rmem_default = 1048576
+net.core.wmem_max = 8388608
+net.core.wmem_default = 1048576
+EOF
+```
+
+These settings provide 8 MB buffers, which exceeds the 7 MB that QUIC requests and eliminates the buffer size warnings.
 
 ---
 
