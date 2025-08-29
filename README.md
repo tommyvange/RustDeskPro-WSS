@@ -54,6 +54,7 @@ Required:
 Optional:
 - RUSTDESK_CORS: true to keep the strict rustdesk.com-only CORS block; false to remove it.
 - RUSTDESK_NOINDEX: true to add X-Robots-Tag noindex header (blocks search engine indexing); false to allow indexing.
+- HIDE_SERVER_DETAILS: true to remove server identification headers (via, server); false to keep default headers.
 Note: Leave UID/GID fields empty; the installer fills them in.
 
 3) Make the installer executable
@@ -99,6 +100,7 @@ The `install.sh` script performs these steps safely and idempotently:
   - Replaces `EXAMPLE.COM` with your `DOMAINS` (comma → space list)
   - Removes the CORS block if `RUSTDESK_CORS=false`; otherwise keeps it
   - Removes the ROBOTS block if `RUSTDESK_NOINDEX=false`; otherwise keeps it
+  - Removes the SERVER_DETAILS block if `HIDE_SERVER_DETAILS=false`; otherwise keeps it
   - Copies the processed file to `$FILE_LOCATION_CADDY/Caddyfile` (640, owner `caddy`)
 - Orchestrates containers
   - `docker compose down` (if any), `pull`, then `up -d --force-recreate`
@@ -146,7 +148,7 @@ If you skip this, containers will run as their default users. That’s simpler b
   - If you didn’t create users, you can remove or comment out those `user:` lines.
 
 5) Prepare and place the Caddyfile
-- Open the file `Caddyfile` (in this repo) and edit two things:
+- Open the file `Caddyfile` (in this repo) and edit three things:
   1) Replace `EXAMPLE.COM` with your real domain. If you have www too, write both separated by a space, like:
      `example.com www.example.com {`
   2) Decide the CORS block:
@@ -155,6 +157,9 @@ If you skip this, containers will run as their default users. That’s simpler b
   3) Decide the ROBOTS block:
      - Keep it if you want to prevent search engines from indexing your server (recommended)
      - Remove the whole block between `### ROBOTS - START ###` and `### ROBOTS - END ###` if you want to allow indexing
+  4) Decide the SERVER_DETAILS block:
+     - Keep it if you want to hide server identification headers like `via` and `server` (recommended)
+     - Remove the whole block between `### SERVER_DETAILS - START ###` and `### SERVER_DETAILS - END ###` if you want to keep default headers
 - Set folder ownership, lock down the folder and copy the Caddyfile.
 ```bash
 sudo chown -R caddy:caddy /srv/caddy || true
@@ -221,6 +226,7 @@ Tip: See the Firewall section below for the exact allow/deny rules to use with U
     │   - Automatic HTTPS/TLS    │
     │   - Reverse Proxy          │ Binds to: 80, 443
     │   - CORS & Robots handling │
+    │   - Server details hiding │
     └─────────────┬──────────────┘
                   │
          ┌────────▼────────┐
@@ -266,6 +272,8 @@ TLS: Caddy obtains and renews certificates automatically via HTTPS-01/HTTP-01. E
 CORS: When enabled (default), the Caddyfile allows cross-origin requests from `https://rustdesk.com` only. If you self-host a console on another origin, disable via `RUSTDESK_CORS=false` and tailor the CORS section.
 
 Robots: When enabled (default), the Caddyfile adds the `X-Robots-Tag: noindex` header to all responses, preventing search engines from indexing your RustDesk server. Disable via `RUSTDESK_NOINDEX=false` if you want to allow search engine indexing.
+
+Server Details: When enabled (default), the Caddyfile removes server identification headers (`via`, `server`) to hide that the service is proxied through Caddy. Disable via `HIDE_SERVER_DETAILS=false` if you want to keep the default server headers.
 
 ---
 

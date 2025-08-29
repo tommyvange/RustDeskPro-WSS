@@ -138,6 +138,11 @@ load_env() {
         RUSTDESK_NOINDEX="true"
     fi
     
+    if [[ -z "$HIDE_SERVER_DETAILS" ]]; then
+        print_warning "HIDE_SERVER_DETAILS variable not set in .env file, defaulting to 'true'"
+        HIDE_SERVER_DETAILS="true"
+    fi
+    
     # Note: UID/GID variables will be set by create_users function
     
     print_success "Environment variables loaded successfully"
@@ -145,6 +150,8 @@ load_env() {
     print_status "Caddy location: $FILE_LOCATION_CADDY"
     print_status "RustDesk location: $FILE_LOCATION_RUSTDESK"
     print_status "CORS enabled: $RUSTDESK_CORS"
+    print_status "Robots noindex enabled: $RUSTDESK_NOINDEX"
+    print_status "Hide server details enabled: $HIDE_SERVER_DETAILS"
 }
 
 # Function to create system users
@@ -244,6 +251,15 @@ process_caddyfile() {
         print_status "Keeping ROBOTS section (RUSTDESK_NOINDEX=true)"
     fi
     
+    # Handle SERVER_DETAILS section
+    if [[ "$HIDE_SERVER_DETAILS" == "false" ]]; then
+        print_status "Removing SERVER_DETAILS section (HIDE_SERVER_DETAILS=false)..."
+        # Remove everything between and including SERVER_DETAILS markers
+        sed -i '/### SERVER_DETAILS - START ###/,/### SERVER_DETAILS - END ###/d' "$temp_caddyfile"
+    else
+        print_status "Keeping SERVER_DETAILS section (HIDE_SERVER_DETAILS=true)"
+    fi
+    
     # Copy processed Caddyfile to destination
     cp "$temp_caddyfile" "$FILE_LOCATION_CADDY/Caddyfile"
     chown caddy:caddy "$FILE_LOCATION_CADDY/Caddyfile"
@@ -310,6 +326,7 @@ main() {
     print_status "- Domains: $DOMAINS"
     print_status "- CORS enabled: $RUSTDESK_CORS"
     print_status "- Robots noindex enabled: $RUSTDESK_NOINDEX"
+    print_status "- Hide server details enabled: $HIDE_SERVER_DETAILS"
     print_status "- Data location: $FILE_LOCATION_RUSTDESK"
     print_status "- Caddy config location: $FILE_LOCATION_CADDY"
     echo
