@@ -181,7 +181,12 @@ docker compose up -d --force-recreate     # start in the background
 docker compose ps                         # show status
 ```
 
-8) Visit your site and test
+8) Configure UDP buffers (recommended for optimal performance)
+- For optimal HTTP/3 (QUIC) performance and to avoid UDP buffer warnings in logs, configure system UDP buffer sizes
+- See the [UDP Buffer Configuration](#udp-buffer-configuration) section in Troubleshooting for detailed steps
+- This step is optional but recommended for production deployments
+
+9) Visit your site and test
 - Go to https://your-domain in a browser. Caddy will get a certificate automatically (leave it a minute the first time).
 - If it doesn’t work, check:
   - DNS is pointing to this server (run `dig +short your-domain` and verify the IP)
@@ -320,8 +325,64 @@ If you run a different firewall (nftables/iptables/cloud), translate the same in
 - Status: `docker compose ps`
 - Logs: `docker compose logs -f --tail=200`
 - Restart: `docker compose restart`
-- Update images: `docker compose pull && docker compose up -d`
 - Stop: `docker compose down`
+
+### Keeping the Stack Updated
+
+Regular updates ensure you have the latest security patches and features. Follow these steps to update your RustDeskPro-WSS stack:
+
+**1. Check for Updates**
+```bash
+# Check current image versions
+docker compose images
+
+# Check for newer versions available
+docker compose pull --dry-run
+```
+
+**2. Create a Backup (Recommended)**
+```bash
+# Stop the stack
+docker compose down
+
+# Backup data directories
+sudo tar -czf "rustdesk-backup-$(date +%Y%m%d-%H%M%S).tar.gz" \
+  "${FILE_LOCATION_RUSTDESK}" "${FILE_LOCATION_CADDY}"
+```
+
+**3. Update Images and Restart**
+```bash
+# Pull latest images
+docker compose pull
+
+# Recreate containers with new images
+docker compose up -d --force-recreate
+
+# Verify everything is running
+docker compose ps
+docker compose logs --tail=50
+```
+
+**4. Monitor After Update**
+- Check logs for any error messages: `docker compose logs -f`
+- Test access to your RustDesk web console
+- Verify WebSocket connections are working properly
+
+**Alternative: Automated Update Script**
+For regular maintenance, you can create a simple update script:
+```bash
+#!/bin/bash
+# update-rustdesk.sh
+cd /path/to/RustDeskPro-WSS
+docker compose down
+docker compose pull
+docker compose up -d --force-recreate
+docker compose ps
+```
+
+Make it executable: `chmod +x update-rustdesk.sh`
+
+**Note:** Always test updates in a staging environment first if you're running a production service.
 
 Backups
 - Back up `${FILE_LOCATION_RUSTDESK}` and `${FILE_LOCATION_CADDY}` regularly. They hold RustDesk state and Caddy’s ACME material.
