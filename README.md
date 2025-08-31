@@ -55,6 +55,7 @@ Optional:
 - RUSTDESK_CORS: true to keep the strict rustdesk.com-only CORS block; false to remove it.
 - RUSTDESK_NOINDEX: true to add X-Robots-Tag noindex header (blocks search engine indexing); false to allow indexing.
 - HIDE_SERVER_DETAILS: true to remove server identification headers (via, server); false to keep default headers.
+
 Note: Leave UID/GID fields empty; the installer fills them in.
 
 3) Make the installer executable
