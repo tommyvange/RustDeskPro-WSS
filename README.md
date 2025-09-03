@@ -10,6 +10,8 @@ This repo gives you two paths:
 
 Works on Linux servers with Docker. Caddy terminates TLS for your domain and safely proxies websocket endpoints and console access to hbbr/hbbs running on the host network.
 
+Take a look at my scripts for automating Windows client deployment, its called [RustDeskPro-Deployment-Scripts](https://github.com/tommyvange/RustDeskPro-Deployment-Scripts).
+
 ---
 
 ## Server Requirements and Recommendation
